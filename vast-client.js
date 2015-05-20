@@ -555,11 +555,13 @@ VASTCompanionAd = _dereq_('./companionad');
 EventEmitter = _dereq_('events').EventEmitter;
 
 VASTParser = (function() {
-  var URLTemplateFilters;
+  var URLTemplateFilters, xmlLists;
 
   function VASTParser() {}
 
   URLTemplateFilters = [];
+
+  xmlLists = [];
 
   VASTParser.addURLTemplateFilter = function(func) {
     if (typeof func === 'function') {
@@ -629,7 +631,6 @@ VASTParser = (function() {
           return cb(err);
         }
         response = new VASTResponse();
-        response.docxml = xml;
         if (!(((xml != null ? xml.documentElement : void 0) != null) && xml.documentElement.nodeName === "VAST")) {
           return cb();
         }
@@ -677,6 +678,8 @@ VASTParser = (function() {
             }
             response = null;
           }
+          xmlLists.push(xml);
+          response.docxml = xmlLists[0];
           return cb(null, response);
         };
         loopIndex = response.ads.length;
@@ -736,6 +739,7 @@ VASTParser = (function() {
                           eventName = _ref5[_n];
                           (_base = creative.trackingEvents)[eventName] || (_base[eventName] = []);
                           creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat(ad.trackingEvents[eventName]);
+                          response.trackingEvents = creative.trackingEvents;
                         }
                       }
                     }

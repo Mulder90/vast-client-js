@@ -10,6 +10,7 @@ EventEmitter = require('events').EventEmitter
 
 class VASTParser
     URLTemplateFilters = []
+    xmlLists = []
 
     @addURLTemplateFilter: (func) ->
         URLTemplateFilters.push(func) if typeof func is 'function'
@@ -55,8 +56,6 @@ class VASTParser
 
             response = new VASTResponse()
 
-            response.docxml = xml
-
             unless xml?.documentElement? and xml.documentElement.nodeName is "VAST"
                 return cb()
 
@@ -84,6 +83,8 @@ class VASTParser
                     # If an [ERRORCODE] macro is included, the video player should substitute with error code 303.
                     @track(response.errorURLTemplates, ERRORCODE: 303) unless errorAlreadyRaised
                     response = null
+                xmlLists.push xml
+                response.docxml = xmlLists[0]
                 cb(null, response)
 
             loopIndex = response.ads.length
@@ -134,6 +135,7 @@ class VASTParser
                                             for eventName in Object.keys ad.trackingEvents
                                                 creative.trackingEvents[eventName] or= []
                                                 creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat ad.trackingEvents[eventName]
+                                                response.trackingEvents = creative.trackingEvents
 
                                 if ad.videoClickTrackingURLTemplates?
                                     for creative in wrappedAd.creatives
