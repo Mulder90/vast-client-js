@@ -555,13 +555,21 @@ VASTCompanionAd = _dereq_('./companionad');
 EventEmitter = _dereq_('events').EventEmitter;
 
 VASTParser = (function() {
-  var URLTemplateFilters, xmlLists;
+  var URLTemplateFilters, impressions, trackingClicks, trackingEvents, urlLists, xmlLists;
 
   function VASTParser() {}
 
   URLTemplateFilters = [];
 
   xmlLists = [];
+
+  urlLists = [];
+
+  trackingEvents = [];
+
+  trackingClicks = [];
+
+  impressions = [];
 
   VASTParser.addURLTemplateFilter = function(func) {
     if (typeof func === 'function') {
@@ -679,7 +687,12 @@ VASTParser = (function() {
             response = null;
           }
           xmlLists.push(xml);
+          urlLists.push(url);
           response.docxml = xmlLists[0];
+          response.lasturl = urlLists[0];
+          response.impressions = impressions;
+          response.trackingClicks = trackingClicks;
+          response.trackingEvents = trackingEvents;
           return cb(null, response);
         };
         loopIndex = response.ads.length;
@@ -729,6 +742,10 @@ VASTParser = (function() {
                   wrappedAd = _ref3[_l];
                   wrappedAd.errorURLTemplates = ad.errorURLTemplates.concat(wrappedAd.errorURLTemplates);
                   wrappedAd.impressionURLTemplates = ad.impressionURLTemplates.concat(wrappedAd.impressionURLTemplates);
+                  impressions.push({
+                    'url': url,
+                    'obj': ad.impressionURLTemplates
+                  });
                   if (ad.trackingEvents != null) {
                     _ref4 = wrappedAd.creatives;
                     for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
@@ -739,8 +756,11 @@ VASTParser = (function() {
                           eventName = _ref5[_n];
                           (_base = creative.trackingEvents)[eventName] || (_base[eventName] = []);
                           creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat(ad.trackingEvents[eventName]);
-                          response.trackingEvents = creative.trackingEvents;
                         }
+                        trackingEvents.push({
+                          'url': url,
+                          'obj': ad.trackingEvents
+                        });
                       }
                     }
                   }
@@ -750,6 +770,10 @@ VASTParser = (function() {
                       creative = _ref6[_o];
                       if (creative.type === 'linear') {
                         creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat(ad.videoClickTrackingURLTemplates);
+                        trackingClicks.push({
+                          'url': url,
+                          'obj': ad.videoClickTrackingURLTemplates
+                        });
                       }
                     }
                   }

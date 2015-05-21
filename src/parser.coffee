@@ -11,6 +11,10 @@ EventEmitter = require('events').EventEmitter
 class VASTParser
     URLTemplateFilters = []
     xmlLists = []
+    urlLists = []
+    trackingEvents = []
+    trackingClicks = []
+    impressions = []
 
     @addURLTemplateFilter: (func) ->
         URLTemplateFilters.push(func) if typeof func is 'function'
@@ -84,7 +88,12 @@ class VASTParser
                     @track(response.errorURLTemplates, ERRORCODE: 303) unless errorAlreadyRaised
                     response = null
                 xmlLists.push xml
+                urlLists.push url
                 response.docxml = xmlLists[0]
+                response.lasturl = urlLists[0]
+                response.impressions = impressions
+                response.trackingClicks = trackingClicks
+                response.trackingEvents = trackingEvents
                 cb(null, response)
 
             loopIndex = response.ads.length
@@ -128,6 +137,7 @@ class VASTParser
                             for wrappedAd in wrappedResponse.ads
                                 wrappedAd.errorURLTemplates = ad.errorURLTemplates.concat wrappedAd.errorURLTemplates
                                 wrappedAd.impressionURLTemplates = ad.impressionURLTemplates.concat wrappedAd.impressionURLTemplates
+                                impressions.push 'url': url, 'obj': ad.impressionURLTemplates
 
                                 if ad.trackingEvents?
                                     for creative in wrappedAd.creatives
@@ -135,12 +145,13 @@ class VASTParser
                                             for eventName in Object.keys ad.trackingEvents
                                                 creative.trackingEvents[eventName] or= []
                                                 creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat ad.trackingEvents[eventName]
-                                                response.trackingEvents = creative.trackingEvents
+                                            trackingEvents.push 'url': url, 'obj': ad.trackingEvents
 
                                 if ad.videoClickTrackingURLTemplates?
                                     for creative in wrappedAd.creatives
                                         if creative.type is 'linear'
                                             creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat ad.videoClickTrackingURLTemplates
+                                            trackingClicks.push 'url': url, 'obj': ad.videoClickTrackingURLTemplates
 
                                 response.ads.splice index, 0, wrappedAd
 
