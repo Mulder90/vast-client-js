@@ -16,6 +16,7 @@ class VASTParser
         @urlLists = []
         @trackingEvents = []
         @trackingClicks = []
+        @extensionElements = []
         @impressions = []
         @vent = new EventEmitter()
 
@@ -98,6 +99,7 @@ class VASTParser
                     response.impressions = @impressions
                     response.trackingClicks = @trackingClicks
                     response.trackingEvents = @trackingEvents
+                    response.extensionElements = @extensionElements
                 cb(null, response)
 
             loopIndex = response.ads.length
@@ -221,6 +223,9 @@ class VASTParser
 
                 when "Impression"
                     ad.impressionURLTemplates.push (@parseNodeText node)
+
+                when "Extensions"
+                    @extensionElements.push node.innerHTML
 
                 when "Creatives"
                     for creativeElement in @childsByName(node, "Creative")
