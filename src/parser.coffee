@@ -10,24 +10,21 @@ EventEmitter = require('events').EventEmitter
 
 class VASTParser
 
-    constructor: ->
-        @URLTemplateFilters = []
-        @xmlLists = []
-        @urlLists = []
-        @trackingEvents = []
-        @trackingClicks = []
-        @extensionElements = []
-        @impressions = []
-        @vent = new EventEmitter()
+    URLTemplateFilters = []
+    xmlLists = []
+    urlLists = []
+    trackingEvents = []
+    trackingClicks = []
+    extensionElements = []
+    impressions = []
 
-
-    addURLTemplateFilter: (func) ->
-        @URLTemplateFilters.push(func) if typeof func is 'function'
+    @addURLTemplateFilter: (func) ->
+        URLTemplateFilters.push(func) if typeof func is 'function'
         return
 
-    removeURLTemplateFilter: () -> @URLTemplateFilters.pop()
-    countURLTemplateFilters: () -> @URLTemplateFilters.length
-    clearUrlTemplateFilters: () -> @URLTemplateFilters = []
+    @removeURLTemplateFilter: () -> URLTemplateFilters.pop()
+    @countURLTemplateFilters: () -> URLTemplateFilters.length
+    @clearUrlTemplateFilters: () -> URLTemplateFilters = []
 
     @parse: (url, options, cb) ->
         if not cb
@@ -37,14 +34,15 @@ class VASTParser
         @_parse url, null, options, (err, response) ->
             cb(response)
 
-    track: (templates, errorCode) ->
+    @vent = new EventEmitter()
+    @track: (templates, errorCode) ->
         @vent.emit 'VAST-error', errorCode
         VASTUtil.track(templates, errorCode)
 
-    on: (eventName, cb) ->
+    @on: (eventName, cb) ->
         @vent.on eventName, cb
 
-    once: (eventName, cb) ->
+    @once: (eventName, cb) ->
         @vent.once eventName, cb
 
     @_parse: (url, parentURLs, options, cb) ->
@@ -54,7 +52,7 @@ class VASTParser
             options = {}
 
         # Process url with defined filter
-        url = filter(url) for filter in @URLTemplateFilters
+        url = filter(url) for filter in URLTemplateFilters
 
         parentURLs ?= []
         parentURLs.push url
@@ -92,14 +90,14 @@ class VASTParser
                     @track(response.errorURLTemplates, ERRORCODE: 303) unless errorAlreadyRaised
                     response = null
                 else
-                    @xmlLists.push xml
-                    @urlLists.push url
-                    response.docxml = @xmlLists[0]
-                    response.lasturl = @urlLists[0]
-                    response.impressions = @impressions
-                    response.trackingClicks = @trackingClicks
-                    response.trackingEvents = @trackingEvents
-                    response.extensionElements = @extensionElements
+                    xmlLists.push xml
+                    urlLists.push url
+                    response.docxml = xmlLists[0]
+                    response.lasturl = urlLists[0]
+                    response.impressions = impressions
+                    response.trackingClicks = trackingClicks
+                    response.trackingEvents = trackingEvents
+                    response.extensionElements = extensionElements
                 cb(null, response)
 
             loopIndex = response.ads.length
@@ -143,7 +141,7 @@ class VASTParser
                             for wrappedAd in wrappedResponse.ads
                                 wrappedAd.errorURLTemplates = ad.errorURLTemplates.concat wrappedAd.errorURLTemplates
                                 wrappedAd.impressionURLTemplates = ad.impressionURLTemplates.concat wrappedAd.impressionURLTemplates
-                                @impressions.push 'url': url, 'obj': ad.impressionURLTemplates
+                                impressions.push 'url': url, 'obj': ad.impressionURLTemplates
 
                                 if ad.trackingEvents?
                                     for creative in wrappedAd.creatives
@@ -151,13 +149,13 @@ class VASTParser
                                             for eventName in Object.keys ad.trackingEvents
                                                 creative.trackingEvents[eventName] or= []
                                                 creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat ad.trackingEvents[eventName]
-                                            @trackingEvents.push 'url': url, 'obj': ad.trackingEvents
+                                            trackingEvents.push 'url': url, 'obj': ad.trackingEvents
 
                                 if ad.videoClickTrackingURLTemplates?
                                     for creative in wrappedAd.creatives
                                         if creative.type is 'linear'
                                             creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat ad.videoClickTrackingURLTemplates
-                                            @trackingClicks.push 'url': url, 'obj': ad.videoClickTrackingURLTemplates
+                                            trackingClicks.push 'url': url, 'obj': ad.videoClickTrackingURLTemplates
 
                                 response.ads.splice index, 0, wrappedAd
 
@@ -166,12 +164,12 @@ class VASTParser
 
             complete()
 
-    childByName: (node, name) ->
+    @childByName: (node, name) ->
         for child in node.childNodes
             if child.nodeName is name
                 return child
 
-    childsByName: (node, name) ->
+    @childsByName: (node, name) ->
         childs = []
         for child in node.childNodes
             if child.nodeName is name
@@ -179,7 +177,7 @@ class VASTParser
         return childs
 
 
-    parseAdElement: (adElement) ->
+    @parseAdElement: (adElement) ->
         for adTypeElement in adElement.childNodes
             adTypeElement.id = adElement.getAttribute("id")
             if adTypeElement.nodeName is "Wrapper"
@@ -187,7 +185,7 @@ class VASTParser
             else if adTypeElement.nodeName is "InLine"
                 return @parseInLineElement adTypeElement
 
-    parseWrapperElement: (wrapperElement) ->
+    @parseWrapperElement: (wrapperElement) ->
         ad = @parseInLineElement wrapperElement
         wrapperURLElement = @childByName wrapperElement, "VASTAdTagURI"
         if wrapperURLElement?
@@ -212,7 +210,7 @@ class VASTParser
         if ad.nextWrapperURL?
             return ad
 
-    parseInLineElement: (inLineElement) ->
+    @parseInLineElement: (inLineElement) ->
         ad = new VASTAd()
         ad.id = inLineElement.id
 
@@ -225,7 +223,7 @@ class VASTParser
                     ad.impressionURLTemplates.push (@parseNodeText node)
 
                 when "Extensions"
-                    @extensionElements.push node.innerHTML
+                    extensionElements.push node.innerHTML
 
                 when "Creatives"
                     for creativeElement in @childsByName(node, "Creative")
@@ -244,7 +242,7 @@ class VASTParser
 
         return ad
 
-    parseCreativeLinearElement: (creativeElement) ->
+    @parseCreativeLinearElement: (creativeElement) ->
         creative = new VASTCreativeLinear()
 
         creative.duration = @parseDuration @parseNodeText(@childByName(creativeElement, "Duration"))
@@ -319,7 +317,7 @@ class VASTParser
 
         return creative
 
-    parseCompanionAd: (creativeElement) ->
+    @parseCompanionAd: (creativeElement) ->
         creative = new VASTCreativeCompanion()
 
         for companionResource in @childsByName(creativeElement, "Companion")
@@ -348,7 +346,7 @@ class VASTParser
 
         return creative
 
-    parseDuration: (durationString) ->
+    @parseDuration: (durationString) ->
         unless (durationString?)
             return -1
         durationComponents = durationString.split(":")
@@ -368,12 +366,7 @@ class VASTParser
         return hours + minutes + seconds
 
     # Parsing node text for legacy support
-<<<<<<< 1ed2bb5cc809d5f8065b8b18e81478db5d840458
     @parseNodeText: (node) ->
         return node and (node.textContent or node.text or '').trim()
-=======
-    parseNodeText: (node) ->
-        return node and (node.textContent or node.text)
->>>>>>> VASTParser now is used with new
 
 module.exports = VASTParser
