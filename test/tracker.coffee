@@ -12,12 +12,14 @@ describe 'VASTTracker', ->
         @Tracker = null
         _eventsSent = []
         @templateFilterCalls = []
+        parser = null
 
         before (done) =>
-            VASTParser.addURLTemplateFilter (url) =>
+            parser = new VASTParser()
+            parser.addURLTemplateFilter (url) =>
               @templateFilterCalls.push url
               return url
-            VASTParser.parse urlfor('wrapper.xml'), (@response) =>
+            parser.parse urlfor('wrapper.xml'), (@response) =>
                 # Init tracker
                 ad = @response.ads[0]
                 creative = @response.ads[0].creatives[0]
@@ -28,7 +30,7 @@ describe 'VASTTracker', ->
                 done()
 
         after () =>
-            VASTParser.clearUrlTemplateFilters()
+            parser.clearUrlTemplateFilters()
 
         it 'should have firstQuartile set', =>
             @Tracker.quartiles.firstQuartile.should.equal 22.53

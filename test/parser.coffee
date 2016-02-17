@@ -11,20 +11,22 @@ describe 'VASTParser', ->
         @response = null
         _response = null
         @templateFilterCalls = []
+        parser = null
 
         before (done) =>
-            VASTParser.addURLTemplateFilter (url) =>
+            parser = new VASTParser()
+            parser.addURLTemplateFilter (url) =>
               @templateFilterCalls.push url
               return url
-            VASTParser.parse urlfor('wrapper.xml'), (@response) =>
+            parser.parse urlfor('wrapper.xml'), (@response) =>
                 _response = @response
                 done()
 
         after () =>
-            VASTParser.clearUrlTemplateFilters()
+            parser.clearUrlTemplateFilters()
 
         it 'should have 1 filter defined', =>
-            VASTParser.countURLTemplateFilters().should.equal 1
+            parser.countURLTemplateFilters().should.equal 1
 
         it 'should have called URLtemplateFilter twice', =>
             @templateFilterCalls.should.have.length 2
@@ -167,9 +169,11 @@ describe 'VASTParser', ->
 
         describe '#VAST', ->
             @response = null
+            parser = null
 
             before (done) =>
-                VASTParser.parse urlfor('vpaid.xml'), (@response) =>
+                parser = new VASTParser()
+                parser.parse urlfor('vpaid.xml'), (@response) =>
                     done()
 
             it 'should have apiFramework set', =>
@@ -177,6 +181,7 @@ describe 'VASTParser', ->
 
 
     describe '#track', ->
+        parser = null
         errorCallbackCalled = 0
         errorCode = null
         errorCallback = (ec) ->
@@ -184,13 +189,14 @@ describe 'VASTParser', ->
             errorCode = ec
 
         beforeEach =>
-            VASTParser.vent.removeAllListeners()
+            parser = new VASTParser()
+            parser.vent.removeAllListeners()
             errorCallbackCalled = 0
 
         #No ads VAST response after one wrapper
         it 'emits an VAST-error on empty vast directly', (done) ->
-            VASTParser.on 'VAST-error', errorCallback
-            VASTParser.parse urlfor('empty.xml'), =>
+            parser.on 'VAST-error', errorCallback
+            parser.parse urlfor('empty.xml'), =>
                 errorCallbackCalled.should.equal 1
                 errorCode.ERRORCODE.should.eql 303
                 done()
@@ -200,18 +206,21 @@ describe 'VASTParser', ->
         # - 1 for the empty vast file
         # - 1 for no ad response on the wrapper
         it 'emits 2 VAST-error events on empty vast after one wrapper', (done) ->
-            VASTParser.on 'VAST-error', errorCallback
-            VASTParser.parse urlfor('wrapper-empty.xml'), =>
+            parser.on 'VAST-error', errorCallback
+            parser.parse urlfor('wrapper-empty.xml'), =>
                 # errorCallbackCalled.should.equal 2
                 # errorCode.ERRORCODE.should.eql 303
                 done()
 
     describe '#legacy', ->
+        parser = null
+
         beforeEach =>
-            VASTParser.vent.removeAllListeners()
+            parser = new VASTParser()
+            parser.vent.removeAllListeners()
 
         it 'correctly loads a wrapped ad, even with the VASTAdTagURL-Tag', (done) ->
-            VASTParser.parse urlfor('wrapper-legacy.xml'), (response) =>
+            parser.parse urlfor('wrapper-legacy.xml'), (response) =>
                 it 'should have found 1 ad', =>
                     response.ads.should.have.length 1
 

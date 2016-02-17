@@ -39,7 +39,8 @@ class VASTClient
             cb(null)
             return
 
-        VASTParser.parse url, options, (response) =>
+        parser = new VASTParser()
+        parser.parse url, options, (response) =>
             cb(response)
 
 
