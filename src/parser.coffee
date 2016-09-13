@@ -180,7 +180,12 @@ class VASTParser
 
     parseAdElement: (adElement) ->
         for adTypeElement in adElement.childNodes
-            adTypeElement.id = adElement.getAttribute("id")
+            try
+                adTypeElement.id = adElement.getAttribute("id")
+            catch e
+                continue unless adTypeElement.nodeName in ["Wrapper", "InLine"]
+                adTypeElement.setAttribute "id", adElement.getAttribute("id")
+
             if adTypeElement.nodeName is "Wrapper"
                 return @parseWrapperElement adTypeElement
             else if adTypeElement.nodeName is "InLine"
