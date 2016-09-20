@@ -26,12 +26,12 @@ class XHRURLHandler
             xhr.open('GET', url)
             xhr.timeout = options.timeout or 0
             xhr.withCredentials = options.withCredentials or false
-            xhr.overrideMimeType('text/xml');
+            if xhr.overrideMimeType?
+                xhr.overrideMimeType('text/xml');
             if options.retryOnFail?
                 xhr.retryOnFail = options.retryOnFail
             else
                 xhr.retryOnFail = true
-            xhr.send()
             xhr.onreadystatechange = =>
                 if xhr.readyState == 4
                     if xhr.status in @acceptedStatusCode
@@ -45,6 +45,7 @@ class XHRURLHandler
                             @get url, opt, cb
                         else
                             cb(null, xhr.responseXML)
+            xhr.send()
         catch
             cb()
 
