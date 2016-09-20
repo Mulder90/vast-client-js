@@ -224,7 +224,19 @@ class VASTParser
                     ad.impressionURLTemplates.push (@parseNodeText node)
 
                 when "Extensions"
-                    @extensionElements.push node.innerHTML
+                    if not node.innerHTML?
+                        nodeHtml = ""
+                        try
+                            s = new XMLSerializer()
+                            nodeHtml = s.serializeToString(node)
+                        catch e
+                            nodeHtml = node.xml
+                        finally
+                            nodeHtml = nodeHtml.replace('<Extensions>', '').replace('</Extensions>', '').trim()
+                            @extensionElements.push nodeHtml
+
+                    else
+                        @extensionElements.push node.innerHTML
 
                 when "Creatives"
                     for creativeElement in @childsByName(node, "Creative")
