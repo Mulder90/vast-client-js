@@ -42,67 +42,83 @@ describe 'VASTParser', ->
             _response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
         describe '#For the 1st ad (Wrapped)', ->
+            ad1 = null
+
+            before () =>
+                ad1 = _response.ads[0]
+
+            after () =>
+                ad1 = null
+
             it 'should have retrieved Ad id attribute', ->
-                _response.ads[0].id.should.eql "ad_id_0001"
+                ad1.id.should.eql "ad_id_0001"
 
             it 'should have retrieved Ad sequence attribute', ->
-                _response.ads[0].sequence.should.eql "1"
+                ad1.sequence.should.eql "1"
 
             it 'should have retrieved AdSystem value', ->
-                _response.ads[0].system.value.should.eql "AdServer"
+                ad1.system.value.should.eql "AdServer"
 
             it 'should have retrieved AdSystem version attribute', ->
-                _response.ads[0].system.version.should.eql "2.0"
+                ad1.system.version.should.eql "2.0"
 
             it 'should have retrieved AdTitle value', ->
-                _response.ads[0].title.should.eql "Ad title"
+                ad1.title.should.eql "Ad title"
 
             it 'should have retrieved Advertiser value', ->
-                _response.ads[0].advertiser.should.eql "Advertiser name"
+                ad1.advertiser.should.eql "Advertiser name"
 
             it 'should have retrieved Description value', ->
-                _response.ads[0].description.should.eql "Description text"
+                ad1.description.should.eql "Description text"
 
             it 'should have retrieved Pricing value', ->
-                _response.ads[0].pricing.value.should.eql "1.09"
+                ad1.pricing.value.should.eql "1.09"
 
             it 'should have retrieved Pricing model attribute', ->
-                _response.ads[0].pricing.model.should.eql "CPM"
+                ad1.pricing.model.should.eql "CPM"
 
             it 'should have retrieved Pricing currency attribute', ->
-                _response.ads[0].pricing.currency.should.eql "USD"
+                ad1.pricing.currency.should.eql "USD"
 
             it 'should have merged wrapped ad error URLs', =>
-                _response.ads[0].errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+                ad1.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
             it 'should have merged impression URLs', =>
-                _response.ads[0].impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
+                ad1.impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
 
             it 'should have two creatives', =>
-                _response.ads[0].creatives.should.have.length 2
+                ad1.creatives.should.have.length 2
 
         describe '#For the 2nd ad (Non wrapped)', ->
+            ad2 = null
+
+            before () =>
+                ad2 = _response.ads[1]
+
+            after () =>
+                ad2 = null
+
             it 'should have retrieved Ad attributes', =>
-                _response.ads[1].id.should.eql "ad_id_0002"
-                should.equal _response.ads[1].sequence, null
+                ad2.id.should.eql "ad_id_0002"
+                should.equal ad2.sequence, null
 
             it 'should have retrieved Ad sub-elements values', =>
-                _response.ads[1].system.value.should.eql "AdServer2"
-                _response.ads[1].system.version.should.eql "2.1"
-                _response.ads[1].title.should.eql "Ad title 2"
-                should.equal _response.ads[1].advertiser, null
-                should.equal _response.ads[1].description, null
-                should.equal _response.ads[1].pricing, null
-                should.equal _response.ads[1].survey, null
+                ad2.system.value.should.eql "AdServer2"
+                ad2.system.version.should.eql "2.1"
+                ad2.title.should.eql "Ad title 2"
+                should.equal ad2.advertiser, null
+                should.equal ad2.description, null
+                should.equal ad2.pricing, null
+                should.equal ad2.survey, null
 
             it 'should have 0 error URL', =>
-                _response.ads[1].errorURLTemplates.should.eql []
+                ad2.errorURLTemplates.should.eql []
 
             it 'should have 1 impression URL', =>
-                _response.ads[1].impressionURLTemplates.should.eql ["http://example.com/impression1"]
+                ad2.impressionURLTemplates.should.eql ["http://example.com/impression1"]
 
             it 'should have 1 creative', =>
-                _response.ads[1].creatives.should.have.length 1
+                ad2.creatives.should.have.length 1
 
         #Linear
         describe '#Linear', ->
