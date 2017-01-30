@@ -18,6 +18,6 @@ class URLHandler
         else if flash.supported()
             return flash.get(url, options, cb)
         else
-            return cb()
+            return cb(new Error('Current context is not supported by any of the default URLHandlers. Please provide a custom URLHandler'))
 
 module.exports = URLHandler

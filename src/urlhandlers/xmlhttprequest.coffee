@@ -19,7 +19,7 @@ class XHRURLHandler
 
     @get: (url, options, cb) ->
         if window.location.protocol == 'https:' && url.indexOf('http://') == 0
-            return cb(new Error('Cannot go from HTTPS to HTTP.'))
+            return cb(new Error('XHRURLHandler: Cannot go from HTTPS to HTTP.'))
 
         try
             xhr = @xhr()
