@@ -26,8 +26,7 @@ class XHRURLHandler
             xhr.open('GET', url)
             xhr.timeout = options.timeout or 0
             xhr.withCredentials = options.withCredentials or false
-            if xhr.overrideMimeType?
-                xhr.overrideMimeType('text/xml');
+            xhr.overrideMimeType && xhr.overrideMimeType('text/xml');
             if options.retryOnFail?
                 xhr.retryOnFail = options.retryOnFail
             else
