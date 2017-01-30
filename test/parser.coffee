@@ -32,53 +32,77 @@ describe 'VASTParser', ->
             @templateFilterCalls.should.have.length 2
             @templateFilterCalls.should.eql [urlfor('wrapper.xml'), urlfor('sample.xml')]
 
-        it 'should have found 1 ad', =>
-            @response.ads.should.have.length 1
+        it 'should have found 2 ads', =>
+            _response.ads.should.have.length 2
 
         it 'should have returned a VAST response object', =>
-            @response.should.be.an.instanceOf(VASTResponse)
+            _response.should.be.an.instanceOf(VASTResponse)
 
         it 'should have merged top level error URLs', =>
-            @response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+            _response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
-        it 'should have retrieved Ad id attribute', =>
-            @response.ads[0].id.should.eql "41993e28-6f21-4e6b-bbd4-b7de053b0951"
+        describe '#For the 1st ad (Wrapped)', ->
+            it 'should have retrieved Ad id attribute', ->
+                _response.ads[0].id.should.eql "ad_id_0001"
 
-        it 'should have retrieved Ad sequence attribute', =>
-            @response.ads[0].sequence.should.eql "0"
+            it 'should have retrieved Ad sequence attribute', ->
+                _response.ads[0].sequence.should.eql "1"
 
-        it 'should have retrieved AdSystem value', =>
-            @response.ads[0].system.value.should.eql "AdServer"
+            it 'should have retrieved AdSystem value', ->
+                _response.ads[0].system.value.should.eql "AdServer"
 
-        it 'should have retrieved AdSystem version attribute', =>
-            @response.ads[0].system.version.should.eql "2.0"
+            it 'should have retrieved AdSystem version attribute', ->
+                _response.ads[0].system.version.should.eql "2.0"
 
-        it 'should have retrieved AdTitle value', =>
-            @response.ads[0].title.should.eql "Ad title"
+            it 'should have retrieved AdTitle value', ->
+                _response.ads[0].title.should.eql "Ad title"
 
-        it 'should have retrieved Advertiser value', =>
-            @response.ads[0].advertiser.should.eql "Advertiser name"
+            it 'should have retrieved Advertiser value', ->
+                _response.ads[0].advertiser.should.eql "Advertiser name"
 
-        it 'should have retrieved Description value', =>
-            @response.ads[0].description.should.eql "Description text"
+            it 'should have retrieved Description value', ->
+                _response.ads[0].description.should.eql "Description text"
 
-        it 'should have retrieved Pricing value', =>
-            @response.ads[0].pricing.value.should.eql "1.09"
+            it 'should have retrieved Pricing value', ->
+                _response.ads[0].pricing.value.should.eql "1.09"
 
-        it 'should have retrieved Pricing model attribute', =>
-            @response.ads[0].pricing.model.should.eql "CPM"
+            it 'should have retrieved Pricing model attribute', ->
+                _response.ads[0].pricing.model.should.eql "CPM"
 
-        it 'should have retrieved Pricing currency attribute', =>
-            @response.ads[0].pricing.currency.should.eql "USD"
+            it 'should have retrieved Pricing currency attribute', ->
+                _response.ads[0].pricing.currency.should.eql "USD"
 
-        it 'should have merged wrapped ad error URLs', =>
-            @response.ads[0].errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+            it 'should have merged wrapped ad error URLs', =>
+                _response.ads[0].errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
-        it 'should have merged impression URLs', =>
-            @response.ads[0].impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
+            it 'should have merged impression URLs', =>
+                _response.ads[0].impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
 
-        it 'should have two creatives', =>
-            @response.ads[0].creatives.should.have.length 2
+            it 'should have two creatives', =>
+                _response.ads[0].creatives.should.have.length 2
+
+        describe '#For the 2nd ad (Non wrapped)', ->
+            it 'should have retrieved Ad attributes', =>
+                _response.ads[1].id.should.eql "ad_id_0002"
+                should.equal _response.ads[1].sequence, null
+
+            it 'should have retrieved Ad sub-elements values', =>
+                _response.ads[1].system.value.should.eql "AdServer2"
+                _response.ads[1].system.version.should.eql "2.1"
+                _response.ads[1].title.should.eql "Ad title 2"
+                should.equal _response.ads[1].advertiser, null
+                should.equal _response.ads[1].description, null
+                should.equal _response.ads[1].pricing, null
+                should.equal _response.ads[1].survey, null
+
+            it 'should have 0 error URL', =>
+                _response.ads[1].errorURLTemplates.should.eql []
+
+            it 'should have 1 impression URL', =>
+                _response.ads[1].impressionURLTemplates.should.eql ["http://example.com/impression1"]
+
+            it 'should have 1 creative', =>
+                _response.ads[1].creatives.should.have.length 1
 
         #Linear
         describe '#Linear', ->
@@ -112,6 +136,9 @@ describe 'VASTParser', ->
 
             it 'should have 2 urls for complete event', =>
                 linear.trackingEvents['complete'].should.eql ['http://example.com/complete', 'http://example.com/wrapper-complete']
+
+            it 'should have 1 url for clickthrough', =>
+                linear.videoClickThroughURLTemplate.should.eql 'http://example.com/clickthrough'
 
             it 'should have 2 urls for clicktracking', =>
                 linear.videoClickTrackingURLTemplates.should.eql ['http://example.com/clicktracking', 'http://example.com/wrapper-clicktracking']
