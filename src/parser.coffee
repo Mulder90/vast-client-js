@@ -6,6 +6,10 @@ VASTCreativeLinear = require('./creative').VASTCreativeLinear
 VASTCreativeCompanion = require('./creative').VASTCreativeCompanion
 VASTMediaFile = require './mediafile'
 VASTCompanionAd = require './companionad'
+SchemaValidationError = require('./error').SchemaValidationError
+NoAdsResponseAfterWrapper = require('./error').NoAdsResponseAfterWrapper
+WrapperLimitReached = require('./error').WrapperLimitReached
+TimeoutVastUri = require('./error').TimeoutVastUri
 EventEmitter = require('events').EventEmitter
 
 class VASTParser
@@ -62,9 +66,11 @@ class VASTParser
             return cb(err) if err?
 
             response = new VASTResponse()
+            error = null
 
             unless xml?.documentElement? and xml.documentElement.nodeName is "VAST"
-                return cb(new Error('Invalid VAST XMLDocument'))
+                error = new SchemaValidationError()
+                return cb(error)
 
             for node in xml.documentElement.childNodes
                 if node.nodeName is 'Error'
@@ -76,12 +82,12 @@ class VASTParser
                     if ad?
                         response.ads.push ad
                     else
-                        # VAST version of response not supported.
-                        @track(response.errorURLTemplates, ERRORCODE: 101)
+                        error = new SchemaValidationError()
+                        @track(response.errorURLTemplates, ERRORCODE: error.code)
 
             complete = (errorAlreadyRaised = false) =>
                 return unless response
-                noCreatives = true;
+                noCreatives = true
                 for ad in response.ads
                     return if ad.nextWrapperURL?
                     if ad.creatives.length > 0
@@ -91,7 +97,8 @@ class VASTParser
                     # The VAST <Error> element is optional but if included, the video player must send a request to the URI
                     # provided when the VAST response returns an empty InLine response after a chain of one or more wrapper ads.
                     # If an [ERRORCODE] macro is included, the video player should substitute with error code 303.
-                    @track(response.errorURLTemplates, ERRORCODE: 303) unless errorAlreadyRaised
+                    error = new NoAdsResponseAfterWrapper()
+                    @track(response.errorURLTemplates, ERRORCODE: error.code) unless errorAlreadyRaised
                 if response.ads.length == 0
                     response = null
                 else
@@ -103,7 +110,7 @@ class VASTParser
                     response.trackingClicks = @trackingClicks
                     response.trackingEvents = @trackingEvents
                     response.extensionElements = @extensionElements
-                cb(null, response)
+                cb(error, response)
 
             loopIndex = response.ads.length
             while loopIndex--
@@ -113,7 +120,9 @@ class VASTParser
                     if parentURLs.length >= 10 or ad.nextWrapperURL in parentURLs
                         # Wrapper limit reached, as defined by the video player.
                         # Too many Wrapper responses have been received with no InLine response.
-                        @track(ad.errorURLTemplates, ERRORCODE: 302)
+
+                        error = new WrapperLimitReached()
+                        @track(ad.errorURLTemplates, ERRORCODE: error.code)
                         response.ads.splice(response.ads.indexOf(ad), 1)
                         complete()
                         return
@@ -131,12 +140,16 @@ class VASTParser
                         if err?
                             # Timeout of VAST URI provided in Wrapper element, or of VAST URI provided in a subsequent Wrapper element.
                             # (URI was either unavailable or reached a timeout as defined by the video player.)
-                            @track(ad.errorURLTemplates, ERRORCODE: 301)
+
+                            error = new TimeoutVastUri()
+                            @track(ad.errorURLTemplates, ERRORCODE: error.code)
                             response.ads.splice(response.ads.indexOf(ad), 1)
                             errorAlreadyRaised = true
                         else if not wrappedResponse?
                             # No Ads VAST response after one or more Wrappers
-                            @track(ad.errorURLTemplates, ERRORCODE: 303)
+
+                            error = new NoAdsResponseAfterWrapper()
+                            @track(ad.errorURLTemplates, ERRORCODE: error.code)
                             response.ads.splice(response.ads.indexOf(ad), 1)
                             errorAlreadyRaised = true
                         else
@@ -180,7 +193,6 @@ class VASTParser
             if child.nodeName is name
                 childs.push child
         return childs
-
 
     parseAdElement: (adElement) ->
         for adTypeElement in adElement.childNodes
@@ -232,6 +244,7 @@ class VASTParser
                 when "Impression"
                     ad.impressionURLTemplates.push (@parseNodeText node)
 
+                # refactor this as soon as possible with official extensions implementation
                 when "Extensions"
                     if not node.innerHTML?
                         nodeHtml = ""

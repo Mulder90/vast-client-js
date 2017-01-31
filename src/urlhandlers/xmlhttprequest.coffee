@@ -1,3 +1,5 @@
+UndefinedError = require('../error').UndefinedError
+
 class XHRURLHandler
     @acceptedStatusCode: [
         200,
@@ -19,7 +21,7 @@ class XHRURLHandler
 
     @get: (url, options, cb) ->
         if window.location.protocol == 'https:' && url.indexOf('http://') == 0
-            return cb(new Error('XHRURLHandler: Cannot go from HTTPS to HTTP.'))
+            return cb(new UndefinedError())
 
         try
             xhr = @xhr()

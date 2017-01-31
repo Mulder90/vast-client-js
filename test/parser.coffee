@@ -267,6 +267,7 @@ describe 'VASTParser', ->
         beforeEach =>
             parser = new VASTParser()
             parser.vent.removeAllListeners()
+            errorCode = null
             errorCallbackCalled = 0
 
         #No ads VAST response after one wrapper

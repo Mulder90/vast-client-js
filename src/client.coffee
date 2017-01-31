@@ -1,5 +1,6 @@
 VASTParser = require './parser'
 VASTUtil = require './util'
+UndefinedError = require('./error').UndefinedError
 
 class VASTClient
     @cappingFreeLunch: 0
@@ -32,7 +33,7 @@ class VASTClient
             @totalCalls++
 
         if @cappingFreeLunch >= @totalCalls
-            cb(null, new Error("VAST call canceled – FreeLunch capping not reached yet #{@totalCalls}/#{@cappingFreeLunch}"))
+            cb(null, new UndefinedError())
             return
 
         timeSinceLastCall = now - @lastSuccessfullAd
@@ -41,7 +42,7 @@ class VASTClient
         if timeSinceLastCall < 0
             @lastSuccessfullAd = 0
         else if timeSinceLastCall < @cappingMinimumTimeInterval
-            cb(null, new Error("VAST call canceled – (#{@cappingMinimumTimeInterval})ms minimum interval reached"))
+            cb(null, new UndefinedError())
             return
 
         parser = new VASTParser()

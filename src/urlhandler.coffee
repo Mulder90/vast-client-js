@@ -1,5 +1,6 @@
 xhr = require './urlhandlers/xmlhttprequest'
 flash = require './urlhandlers/flash'
+UndefinedError = require('./error').UndefinedError
 
 class URLHandler
     @get: (url, options, cb) ->
@@ -18,6 +19,6 @@ class URLHandler
         else if flash.supported()
             return flash.get(url, options, cb)
         else
-            return cb(new Error('Current context is not supported by any of the default URLHandlers. Please provide a custom URLHandler'))
+            return cb(new UndefinedError())
 
 module.exports = URLHandler
