@@ -6,6 +6,10 @@ VASTCreativeLinear = require('./creative').VASTCreativeLinear
 VASTCreativeCompanion = require('./creative').VASTCreativeCompanion
 VASTMediaFile = require './mediafile'
 VASTCompanionAd = require './companionad'
+SchemaValidationError = require('./error').SchemaValidationError
+NoAdsResponseAfterWrapper = require('./error').NoAdsResponseAfterWrapper
+WrapperLimitReached = require('./error').WrapperLimitReached
+TimeoutVastUri = require('./error').TimeoutVastUri
 EventEmitter = require('events').EventEmitter
 
 class VASTParser
@@ -34,7 +38,7 @@ class VASTParser
             options = {}
 
         @_parse url, null, options, (err, response) ->
-            cb(response)
+            cb(response, err)
 
     track: (templates, errorCode) ->
         @vent.emit 'VAST-error', errorCode
@@ -62,9 +66,11 @@ class VASTParser
             return cb(err) if err?
 
             response = new VASTResponse()
+            error = null
 
             unless xml?.documentElement? and xml.documentElement.nodeName is "VAST"
-                return cb()
+                error = new SchemaValidationError()
+                return cb(error)
 
             for node in xml.documentElement.childNodes
                 if node.nodeName is 'Error'
@@ -76,19 +82,24 @@ class VASTParser
                     if ad?
                         response.ads.push ad
                     else
-                        # VAST version of response not supported.
-                        @track(response.errorURLTemplates, ERRORCODE: 101)
+                        error = new SchemaValidationError()
+                        @track(response.errorURLTemplates, ERRORCODE: error.code)
 
             complete = (errorAlreadyRaised = false) =>
                 return unless response
+                noCreatives = true
                 for ad in response.ads
                     return if ad.nextWrapperURL?
-                if response.ads.length == 0
+                    if ad.creatives.length > 0
+                        noCreatives = false
+                if noCreatives
                     # No Ad Response
                     # The VAST <Error> element is optional but if included, the video player must send a request to the URI
                     # provided when the VAST response returns an empty InLine response after a chain of one or more wrapper ads.
                     # If an [ERRORCODE] macro is included, the video player should substitute with error code 303.
-                    @track(response.errorURLTemplates, ERRORCODE: 303) unless errorAlreadyRaised
+                    error = new NoAdsResponseAfterWrapper()
+                    @track(response.errorURLTemplates, ERRORCODE: error.code) unless errorAlreadyRaised
+                if response.ads.length == 0
                     response = null
                 else
                     @xmlLists.push xml
@@ -99,7 +110,7 @@ class VASTParser
                     response.trackingClicks = @trackingClicks
                     response.trackingEvents = @trackingEvents
                     response.extensionElements = @extensionElements
-                cb(null, response)
+                cb(error, response)
 
             loopIndex = response.ads.length
             while loopIndex--
@@ -109,7 +120,9 @@ class VASTParser
                     if parentURLs.length >= 10 or ad.nextWrapperURL in parentURLs
                         # Wrapper limit reached, as defined by the video player.
                         # Too many Wrapper responses have been received with no InLine response.
-                        @track(ad.errorURLTemplates, ERRORCODE: 302)
+
+                        error = new WrapperLimitReached()
+                        @track(ad.errorURLTemplates, ERRORCODE: error.code)
                         response.ads.splice(response.ads.indexOf(ad), 1)
                         complete()
                         return
@@ -127,12 +140,16 @@ class VASTParser
                         if err?
                             # Timeout of VAST URI provided in Wrapper element, or of VAST URI provided in a subsequent Wrapper element.
                             # (URI was either unavailable or reached a timeout as defined by the video player.)
-                            @track(ad.errorURLTemplates, ERRORCODE: 301)
+
+                            error = new TimeoutVastUri()
+                            @track(ad.errorURLTemplates, ERRORCODE: error.code)
                             response.ads.splice(response.ads.indexOf(ad), 1)
                             errorAlreadyRaised = true
                         else if not wrappedResponse?
                             # No Ads VAST response after one or more Wrappers
-                            @track(ad.errorURLTemplates, ERRORCODE: 303)
+
+                            error = new NoAdsResponseAfterWrapper()
+                            @track(ad.errorURLTemplates, ERRORCODE: error.code)
                             response.ads.splice(response.ads.indexOf(ad), 1)
                             errorAlreadyRaised = true
                         else
@@ -177,14 +194,12 @@ class VASTParser
                 childs.push child
         return childs
 
-
     parseAdElement: (adElement) ->
         for adTypeElement in adElement.childNodes
-            try
-                adTypeElement.id = adElement.getAttribute("id")
-            catch e
-                continue unless adTypeElement.nodeName in ["Wrapper", "InLine"]
-                adTypeElement.setAttribute "id", adElement.getAttribute("id")
+            continue unless adTypeElement.nodeName in ["Wrapper", "InLine"]
+
+            @copyNodeAttribute "id", adElement, adTypeElement
+            @copyNodeAttribute "sequence", adElement, adTypeElement
 
             if adTypeElement.nodeName is "Wrapper"
                 return @parseWrapperElement adTypeElement
@@ -218,7 +233,8 @@ class VASTParser
 
     parseInLineElement: (inLineElement) ->
         ad = new VASTAd()
-        ad.id = inLineElement.id
+        ad.id = inLineElement.getAttribute("id") || null
+        ad.sequence = inLineElement.getAttribute("sequence") || null
 
         for node in inLineElement.childNodes
             switch node.nodeName
@@ -228,6 +244,7 @@ class VASTParser
                 when "Impression"
                     ad.impressionURLTemplates.push (@parseNodeText node)
 
+                # refactor this as soon as possible with official extensions implementation
                 when "Extensions"
                     if not node.innerHTML?
                         nodeHtml = ""
@@ -242,6 +259,29 @@ class VASTParser
 
                     else
                         @extensionElements.push node.innerHTML
+
+                when "AdSystem"
+                    ad.system =
+                        value : @parseNodeText node
+                        version : node.getAttribute("version") || null
+
+                when "AdTitle"
+                    ad.title = @parseNodeText node
+
+                when "Description"
+                    ad.description = @parseNodeText node
+
+                when "Advertiser"
+                    ad.advertiser = @parseNodeText node
+
+                when "Pricing"
+                    ad.pricing =
+                        value    : @parseNodeText node
+                        model    : node.getAttribute("model") || null
+                        currency : node.getAttribute("currency") || null
+
+                when "Survey"
+                    ad.survey = @parseNodeText node
 
                 when "Creatives"
                     for creativeElement in @childsByName(node, "Creative")
@@ -360,6 +400,7 @@ class VASTParser
                         companionAd.trackingEvents[eventName] ?= []
                         companionAd.trackingEvents[eventName].push trackingURLTemplate
             companionAd.companionClickThroughURLTemplate = @parseNodeText(@childByName(companionResource, "CompanionClickThrough"))
+            companionAd.companionClickTrackingURLTemplate = @parseNodeText(@childByName(companionResource, "CompanionClickTracking"))
             creative.variations.push companionAd
 
         return creative
@@ -386,5 +427,10 @@ class VASTParser
     # Parsing node text for legacy support
     parseNodeText: (node) ->
         return node and (node.textContent or node.text or '').trim()
+
+    copyNodeAttribute: (attributeName, nodeSource, nodeDestination) ->
+        attributeValue = nodeSource.getAttribute attributeName
+        if attributeValue
+            nodeDestination.setAttribute attributeName, attributeValue
 
 module.exports = VASTParser

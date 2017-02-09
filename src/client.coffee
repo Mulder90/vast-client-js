@@ -1,5 +1,6 @@
 VASTParser = require './parser'
 VASTUtil = require './util'
+UndefinedError = require('./error').UndefinedError
 
 class VASTClient
     @cappingFreeLunch: 0
@@ -32,16 +33,21 @@ class VASTClient
             @totalCalls++
 
         if @cappingFreeLunch >= @totalCalls
-            cb(null)
+            cb(null, new UndefinedError())
             return
 
-        if now - @lastSuccessfullAd < @cappingMinimumTimeInterval
-            cb(null)
+        timeSinceLastCall = now - @lastSuccessfullAd
+        # Check timeSinceLastCall to be a positive number. If not, this mean the
+        # previous was made in the future. We reset lastSuccessfullAd value
+        if timeSinceLastCall < 0
+            @lastSuccessfullAd = 0
+        else if timeSinceLastCall < @cappingMinimumTimeInterval
+            cb(null, new UndefinedError())
             return
 
         parser = new VASTParser()
-        parser.parse url, options, (response) =>
-            cb(response)
+        parser.parse url, options, (response, err) =>
+            cb(response, err)
 
 
     # 'Fake' static constructor
@@ -64,6 +70,7 @@ class VASTClient
             return
 
         # Init values if not already set
+        VASTClient.lastSuccessfullAd ?= 0
         VASTClient.totalCalls ?= 0
         VASTClient.totalCallsTimeout ?= 0
         return

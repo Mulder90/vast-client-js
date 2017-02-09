@@ -4,7 +4,7 @@ VASTParser = require '../src/parser'
 VASTResponse = require '../src/response'
 
 urlfor = (relpath) ->
-    return 'file://' + path.resolve(path.dirname(module.filename), relpath).replace(/\\/g, '/')
+    return 'file://' + path.resolve(path.dirname(module.filename), 'fixtures/' + relpath).replace(/\\/g, '/')
 
 describe 'VASTParser', ->
     describe '#parse', ->
@@ -32,23 +32,93 @@ describe 'VASTParser', ->
             @templateFilterCalls.should.have.length 2
             @templateFilterCalls.should.eql [urlfor('wrapper.xml'), urlfor('sample.xml')]
 
-        it 'should have found 1 ad', =>
-            @response.ads.should.have.length 1
+        it 'should have found 2 ads', =>
+            _response.ads.should.have.length 2
 
         it 'should have returned a VAST response object', =>
-            @response.should.be.an.instanceOf(VASTResponse)
+            _response.should.be.an.instanceOf(VASTResponse)
 
         it 'should have merged top level error URLs', =>
-            @response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+            _response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
-        it 'should have merged wrapped ad error URLs', =>
-            @response.ads[0].errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+        describe '#For the 1st ad (Wrapped)', ->
+            ad1 = null
 
-        it 'should have merged impression URLs', =>
-            @response.ads[0].impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
+            before () =>
+                ad1 = _response.ads[0]
 
-        it 'should have two creatives', =>
-            @response.ads[0].creatives.should.have.length 2
+            after () =>
+                ad1 = null
+
+            it 'should have retrieved Ad id attribute', ->
+                ad1.id.should.eql "ad_id_0001"
+
+            it 'should have retrieved Ad sequence attribute', ->
+                ad1.sequence.should.eql "1"
+
+            it 'should have retrieved AdSystem value', ->
+                ad1.system.value.should.eql "AdServer"
+
+            it 'should have retrieved AdSystem version attribute', ->
+                ad1.system.version.should.eql "2.0"
+
+            it 'should have retrieved AdTitle value', ->
+                ad1.title.should.eql "Ad title"
+
+            it 'should have retrieved Advertiser value', ->
+                ad1.advertiser.should.eql "Advertiser name"
+
+            it 'should have retrieved Description value', ->
+                ad1.description.should.eql "Description text"
+
+            it 'should have retrieved Pricing value', ->
+                ad1.pricing.value.should.eql "1.09"
+
+            it 'should have retrieved Pricing model attribute', ->
+                ad1.pricing.model.should.eql "CPM"
+
+            it 'should have retrieved Pricing currency attribute', ->
+                ad1.pricing.currency.should.eql "USD"
+
+            it 'should have merged wrapped ad error URLs', =>
+                ad1.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
+
+            it 'should have merged impression URLs', =>
+                ad1.impressionURLTemplates.should.eql ["http://example.com/wrapper-impression", "http://127.0.0.1:8080/second/wrapper_impression", "http://example.com/impression1", "http://example.com/impression2", "http://example.com/impression3"]
+
+            it 'should have two creatives', =>
+                ad1.creatives.should.have.length 2
+
+        describe '#For the 2nd ad (Non wrapped)', ->
+            ad2 = null
+
+            before () =>
+                ad2 = _response.ads[1]
+
+            after () =>
+                ad2 = null
+
+            it 'should have retrieved Ad attributes', =>
+                ad2.id.should.eql "ad_id_0002"
+                should.equal ad2.sequence, null
+
+            it 'should have retrieved Ad sub-elements values', =>
+                ad2.system.value.should.eql "AdServer2"
+                ad2.system.version.should.eql "2.1"
+                ad2.title.should.eql "Ad title 2"
+                should.equal ad2.advertiser, null
+                should.equal ad2.description, null
+                should.equal ad2.pricing, null
+                should.equal ad2.survey, null
+
+            it 'should have 0 error URL', =>
+                ad2.errorURLTemplates.should.eql []
+
+            it 'should have 1 impression URL', =>
+                ad2.impressionURLTemplates.should.eql ["http://example.com/impression1"]
+
+            it 'should have 1 creative', =>
+                ad2.creatives.should.have.length 1
 
         #Linear
         describe '#Linear', ->
@@ -82,6 +152,9 @@ describe 'VASTParser', ->
 
             it 'should have 2 urls for complete event', =>
                 linear.trackingEvents['complete'].should.eql ['http://example.com/complete', 'http://example.com/wrapper-complete']
+
+            it 'should have 1 url for clickthrough', =>
+                linear.videoClickThroughURLTemplate.should.eql 'http://example.com/clickthrough'
 
             it 'should have 2 urls for clicktracking', =>
                 linear.videoClickTrackingURLTemplates.should.eql ['http://example.com/clicktracking', 'http://example.com/wrapper-clicktracking']
@@ -131,6 +204,9 @@ describe 'VASTParser', ->
 
                     it 'should have 1 companion clickthrough url', =>
                         companion.companionClickThroughURLTemplate.should.equal  'http://example.com/companion-clickthrough'
+
+                    it 'should have 1 companion clicktracking url', =>
+                        companion.companionClickTrackingURLTemplate.should.equal  'http://example.com/companion-clicktracking'
 
                 describe 'as IFrameResource', ->
                   before (done) =>
@@ -191,12 +267,21 @@ describe 'VASTParser', ->
         beforeEach =>
             parser = new VASTParser()
             parser.vent.removeAllListeners()
+            errorCode = null
             errorCallbackCalled = 0
 
         #No ads VAST response after one wrapper
         it 'emits an VAST-error on empty vast directly', (done) ->
             parser.on 'VAST-error', errorCallback
             parser.parse urlfor('empty.xml'), =>
+                errorCallbackCalled.should.equal 1
+                errorCode.ERRORCODE.should.eql 303
+                done()
+
+        # VAST response with Ad but no Creative
+        it 'emits a VAST-error on response with no Creative', (done) ->
+            parser.on 'VAST-error', errorCallback
+            parser.parse urlfor('empty-no-creative.xml'), =>
                 errorCallbackCalled.should.equal 1
                 errorCode.ERRORCODE.should.eql 303
                 done()
