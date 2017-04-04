@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<VAST version="2.0">
+<NotAValidVastSchema version="2.0">
 <Ad id="11363">
     <InLine>
         <AdSystem>AdServer</AdSystem>
@@ -30,4 +30,4 @@
         </Creatives>
     </InLine>
 </Ad>
-</VAST>
+</NotAValidVastSchema>

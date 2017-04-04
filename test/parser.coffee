@@ -3,6 +3,12 @@ path = require 'path'
 VASTParser = require '../src/parser'
 VASTResponse = require '../src/response'
 
+NoAdsResponseAfterWrapper = require('../src/error').NoAdsResponseAfterWrapper
+TimeoutVastUri = require('../src/error').TimeoutVastUri
+SchemaValidationError = require('../src/error').SchemaValidationError
+WrapperLimitReached = require('../src/error').WrapperLimitReached
+
+
 urlfor = (relpath) ->
     return 'file://' + path.resolve(path.dirname(module.filename), 'fixtures/' + relpath).replace(/\\/g, '/')
 
@@ -256,45 +262,94 @@ describe 'VASTParser', ->
                 @response.ads[0].creatives[0].mediaFiles[0].apiFramework.should.be.equal "VPAID"
 
 
-    describe '#track', ->
+    describe '#track errors', ->
         parser = null
         errorCallbackCalled = 0
         errorCode = null
-        errorCallback = (ec) ->
+        errorCallback = (errCode) ->
             errorCallbackCalled++
-            errorCode = ec
+            errorCode = errCode
 
         beforeEach =>
             parser = new VASTParser()
             parser.vent.removeAllListeners()
-            errorCode = null
+            error = null
             errorCallbackCalled = 0
 
-        #No ads VAST response after one wrapper
+        # No ads VAST response after one wrapper
         it 'emits an VAST-error on empty vast directly', (done) ->
             parser.on 'VAST-error', errorCallback
             parser.parse urlfor('empty.xml'), =>
                 errorCallbackCalled.should.equal 1
-                errorCode.ERRORCODE.should.eql 303
+                errorCode.ERRORCODE.should.eql new NoAdsResponseAfterWrapper().code
                 done()
-
-        # VAST response with Ad but no Creative
+        #
+        # # VAST response with Ad but no Creative
         it 'emits a VAST-error on response with no Creative', (done) ->
             parser.on 'VAST-error', errorCallback
             parser.parse urlfor('empty-no-creative.xml'), =>
                 errorCallbackCalled.should.equal 1
-                errorCode.ERRORCODE.should.eql 303
+                errorCode.ERRORCODE.should.eql new NoAdsResponseAfterWrapper().code
                 done()
 
-        #No ads VAST response after more than one wrapper
-        # Two events should be emits :
-        # - 1 for the empty vast file
-        # - 1 for no ad response on the wrapper
-        it 'emits 2 VAST-error events on empty vast after one wrapper', (done) ->
+        # No ads VAST response after more than one wrapper
+        it 'emits a noAdsResponseAfterWrapper error on empty vast after one wrapper', (done) ->
             parser.on 'VAST-error', errorCallback
             parser.parse urlfor('wrapper-empty.xml'), =>
-                # errorCallbackCalled.should.equal 2
-                # errorCode.ERRORCODE.should.eql 303
+                errorCallbackCalled.should.equal 2
+                errorCode.ERRORCODE.should.eql new NoAdsResponseAfterWrapper().code
+                done()
+
+        # Wrapper limit reached after 10 wrapper
+        it 'emits a WrapperLimitReached error after 10 wrapper', (done) ->
+            parser.on 'VAST-error', errorCallback
+            parser.parse urlfor('wrapper-10.xml'), =>
+                errorCallbackCalled.should.equal 10
+                errorCode.ERRORCODE.should.eql new WrapperLimitReached().code
+                done()
+
+    describe '#pass errors in parse callback', ->
+        parser = null
+
+        beforeEach =>
+            parser = new VASTParser()
+            parser.vent.removeAllListeners()
+
+        it 'should send a response obj and a null error if VAST is valid', (done) ->
+            parser.parse urlfor('sample.xml'), (response, error) =>
+                should.equal error, null
+                response.should.have.keys 'ads'
+                done()
+
+        it 'should send a null response and a 303 error if VAST is empty', (done) ->
+            parser.parse urlfor('empty.xml'), (response, error) =>
+                should.equal response, null
+                error.code.should.eql 303
+                done()
+
+        it 'should send a null response and a 302 error if wrapper length is greater than 10', (done) ->
+            parser.parse urlfor('wrapper-10.xml'), (response, error) =>
+                should.equal response, null
+                error.code.should.eql 302
+                done()
+
+        it 'should send a null response and a 303 error if wrapper call is empty', (done) ->
+            parser.parse urlfor('wrapper-empty.xml'), (response, error) =>
+                should.equal response, null
+                error.code.should.eql 303
+                done()
+
+        it 'should send a null response and a 101 error if VAST Schema is not valid', (done) ->
+            parser.parse urlfor('schema-error.xml'), (response, error) =>
+                should.equal response, null
+                error.code.should.eql 101
+                done()
+
+        it 'should send a null response and a 303 error if no creative', (done) ->
+            parser.parse urlfor('empty-no-creative.xml'), (response, error) =>
+                should.equal response, null
+                console.log response
+                error.code.should.eql 303
                 done()
 
     describe '#legacy', ->

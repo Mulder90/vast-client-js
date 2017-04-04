@@ -3,7 +3,7 @@
   <Ad id="287461" sequence="1">
     <Wrapper>
       <AdSystem>VAST</AdSystem>
-      <VASTAdTagURI>sample-1.xml</VASTAdTagURI>
+      <VASTAdTagURI>wrapper-4.xml</VASTAdTagURI>
       <Error>http://example.com/wrapper-error</Error>
       <Impression>http://example.com/wrapper-impression</Impression>
       <Creatives>
