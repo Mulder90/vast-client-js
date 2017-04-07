@@ -21,6 +21,7 @@ class XHRURLHandler
 
     @get: (url, options, cb) ->
         if window.location.protocol == 'https:' && url.indexOf('http://') == 0
+            # Change this UndefinedError with a more specific error
             return cb(new UndefinedError())
 
         try
@@ -48,6 +49,6 @@ class XHRURLHandler
                             cb(null, xhr.responseXML)
             xhr.send()
         catch
-            cb()
+            cb(new UndefinedError())
 
 module.exports = XHRURLHandler
