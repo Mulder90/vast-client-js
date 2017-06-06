@@ -1097,8 +1097,8 @@ VASTParser = (function() {
     var adParamsElement, clickTrackingElement, creative, customClickElement, eventName, maintainAspectRatio, mediaFile, mediaFileElement, mediaFilesElement, offset, percent, scalable, skipOffset, trackingElement, trackingEventsElement, trackingURLTemplate, videoClicksElement, _base, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
     creative = new VASTCreativeLinear();
     creative.duration = this.parseDuration(this.parseNodeText(this.childByName(creativeElement, "Duration")));
-    if (creative.duration === -1 && creativeElement.parentNode.parentNode.parentNode.nodeName !== 'Wrapper') {
-      return null;
+    if (creative.duration <= 0 && creativeElement.parentNode.parentNode.parentNode.nodeName !== 'Wrapper') {
+      creative.duration = 1;
     }
     skipOffset = creativeElement.getAttribute("skipoffset");
     if (skipOffset == null) {

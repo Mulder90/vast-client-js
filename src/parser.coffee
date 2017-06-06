@@ -307,8 +307,8 @@ class VASTParser
         creative = new VASTCreativeLinear()
 
         creative.duration = @parseDuration @parseNodeText(@childByName(creativeElement, "Duration"))
-        if creative.duration == -1 and creativeElement.parentNode.parentNode.parentNode.nodeName != 'Wrapper'
-            return null # can't parse duration, element is required
+        if creative.duration <= 0 and creativeElement.parentNode.parentNode.parentNode.nodeName != 'Wrapper'
+            creative.duration = 1
 
         skipOffset = creativeElement.getAttribute("skipoffset")
         if not skipOffset? then creative.skipDelay = null
