@@ -143,6 +143,11 @@ describe 'VASTParser', ->
             it 'should have a duration of 90.123s', =>
                 linear.duration.should.equal 90.123
 
+            # Allowed empty duration
+            it 'should set duration at 1 if empty', ->
+                parser.parse urlfor('empty-duration.xml'), (response) =>
+                    response.ads[0].creatives[0].duration.should.equal 1
+
             it 'should have parsed media file attributes', =>
                 mediaFile = linear.mediaFiles[0]
                 mediaFile.width.should.equal 512
@@ -283,7 +288,7 @@ describe 'VASTParser', ->
                 errorCallbackCalled.should.equal 1
                 errorCode.ERRORCODE.should.eql new NoAdsResponseAfterWrapper().code
                 done()
-        #
+
         # # VAST response with Ad but no Creative
         it 'emits a VAST-error on response with no Creative', (done) ->
             parser.on 'VAST-error', errorCallback
