@@ -13,9 +13,12 @@ class VASTClient
         now = +new Date()
 
         extend = exports.extend = (object, properties) ->
+            obj = {}
+            for key, val of object
+                obj[key] = val
             for key, val of properties
-                object[key] = val
-            object
+                obj[key] = val
+            obj
 
         if not cb
             cb = opts if typeof opts is 'function'

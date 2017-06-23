@@ -353,12 +353,17 @@ VASTClient = (function() {
     var extend, now, options, parser, timeSinceLastCall;
     now = +new Date();
     extend = exports.extend = function(object, properties) {
-      var key, val;
+      var key, obj, val;
+      obj = {};
+      for (key in object) {
+        val = object[key];
+        obj[key] = val;
+      }
       for (key in properties) {
         val = properties[key];
-        object[key] = val;
+        obj[key] = val;
       }
-      return object;
+      return obj;
     };
     if (!cb) {
       if (typeof opts === 'function') {
