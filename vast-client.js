@@ -1429,10 +1429,13 @@ VASTTracker = (function(_super) {
     }
   };
 
-  VASTTracker.prototype.load = function() {
+  VASTTracker.prototype.load = function(variables) {
+    if (variables == null) {
+      variables = {};
+    }
     if (!this.impressed) {
       this.impressed = true;
-      this.trackURLs(this.ad.impressionURLTemplates);
+      this.trackURLs(this.ad.impressionURLTemplates, variables);
       return this.track("creativeView");
     }
   };
@@ -1474,10 +1477,13 @@ VASTTracker = (function(_super) {
     }
   };
 
-  VASTTracker.prototype.track = function(eventName, once) {
+  VASTTracker.prototype.track = function(eventName, once, variables) {
     var idx, trackingURLTemplates;
     if (once == null) {
       once = false;
+    }
+    if (variables == null) {
+      variables = {};
     }
     if (eventName === 'closeLinear' && ((this.trackingEvents[eventName] == null) && (this.trackingEvents['close'] != null))) {
       eventName = 'close';
@@ -1486,7 +1492,7 @@ VASTTracker = (function(_super) {
     idx = this.emitAlwaysEvents.indexOf(eventName);
     if (trackingURLTemplates != null) {
       this.emit(eventName, '');
-      this.trackURLs(trackingURLTemplates);
+      this.trackURLs(trackingURLTemplates, variables);
     } else if (idx !== -1) {
       this.emit(eventName, '');
     }
@@ -1716,7 +1722,7 @@ VASTUtil = (function() {
   };
 
   VASTUtil.resolveURLTemplates = function(URLTemplates, variables) {
-    var URLTemplate, URLs, key, macro1, macro2, resolveURL, value, _i, _len;
+    var URLTemplate, URLs, key, macro1, macro2, macro3, resolveURL, v, value, _i, _len;
     URLs = [];
     if (variables == null) {
       variables = {};
@@ -1735,12 +1741,21 @@ VASTUtil = (function() {
         value = variables[key];
         macro1 = "[" + key + "]";
         macro2 = "%%" + key + "%%";
-        resolveURL = resolveURL.replace(macro1, value);
-        resolveURL = resolveURL.replace(macro2, value);
+        macro3 = "{" + key + "}";
+        v = this.encodeURIComponentRFC3986(value);
+        resolveURL = resolveURL.replace(macro1, v);
+        resolveURL = resolveURL.replace(macro2, v);
+        resolveURL = resolveURL.replace(macro3, v);
       }
       URLs.push(resolveURL);
     }
     return URLs;
+  };
+
+  VASTUtil.encodeURIComponentRFC3986 = function(str) {
+    return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+      return '%' + c.charCodeAt(0).toString(16);
+    });
   };
 
   VASTUtil.storage = (function() {
