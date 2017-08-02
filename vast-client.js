@@ -1554,7 +1554,7 @@ URLHandler = (function() {
       }
       options = {};
     }
-    if (options.response != null) {
+    if ((options.response != null) && url === '') {
       return cb(null, options.response);
     } else if ((_ref = options.urlhandler) != null ? _ref.supported() : void 0) {
       return options.urlhandler.get(url, options, cb);
