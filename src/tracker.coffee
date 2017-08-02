@@ -94,10 +94,11 @@ class VASTTracker extends EventEmitter
         @skipDelay = duration if typeof duration is 'number'
 
     # To be called when the video started to log the impression
-    load: ->
+    load: (variables) ->
+        variables ?= {}
         unless @impressed
             @impressed = yes
-            @trackURLs @ad.impressionURLTemplates
+            @trackURLs @ad.impressionURLTemplates, variables
             @track "creativeView"
 
     # To be called when an error happen with the proper error code
@@ -133,7 +134,8 @@ class VASTTracker extends EventEmitter
 
             @emit "clickthrough", clickThroughURL
 
-    track: (eventName, once=no) ->
+    track: (eventName, once=no, variables) ->
+        variables ?= {}
 
         # closeLinear event was introduced in VAST 3.0
         # Fallback to vast 2.0 close event if necessary
@@ -145,7 +147,7 @@ class VASTTracker extends EventEmitter
 
         if trackingURLTemplates?
             @emit eventName, ''
-            @trackURLs trackingURLTemplates
+            @trackURLs trackingURLTemplates, variables
         else if idx isnt -1
             @emit eventName, ''
 
