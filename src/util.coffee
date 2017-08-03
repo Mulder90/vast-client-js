@@ -22,11 +22,20 @@ class VASTUtil
             for key, value of variables
                 macro1 = "[#{key}]"
                 macro2 = "%%#{key}%%"
-                resolveURL = resolveURL.replace(macro1, value)
-                resolveURL = resolveURL.replace(macro2, value)
+                macro3 = "{#{key}}"
+                v = @encodeURIComponentRFC3986(value)
+                resolveURL = resolveURL.replace(macro1, v)
+                resolveURL = resolveURL.replace(macro2, v)
+                resolveURL = resolveURL.replace(macro3, v)
             URLs.push resolveURL
 
         return URLs
+
+    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+    @encodeURIComponentRFC3986: (str) ->
+        return encodeURIComponent(str).replace(/[!'()*]/g, (c) ->
+            return '%' + c.charCodeAt(0).toString(16)
+        )
 
     @storage: do () ->
         try
