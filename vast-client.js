@@ -319,6 +319,7 @@ VASTAd = (function() {
     this.errorURLTemplates = [];
     this.impressionURLTemplates = [];
     this.creatives = [];
+    this.extensions = [];
   }
 
   return VASTAd;
@@ -925,6 +926,9 @@ VASTParser = (function() {
                       }
                     }
                   }
+                  if (ad.extensions != null) {
+                    _this.extensionElements.push(ad.extensions);
+                  }
                   response.ads.splice(index, 0, wrappedAd);
                 }
               }
@@ -1040,10 +1044,10 @@ VASTParser = (function() {
               nodeHtml = node.xml;
             } finally {
               nodeHtml = nodeHtml.replace('<Extensions>', '').replace('</Extensions>', '').trim();
-              this.extensionElements.push(nodeHtml);
+              ad.extensions.push(nodeHtml);
             }
           } else {
-            this.extensionElements.push(node.innerHTML);
+            ad.extensions.push(node.innerHTML);
           }
           break;
         case "AdSystem":

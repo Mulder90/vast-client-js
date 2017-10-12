@@ -178,6 +178,9 @@ class VASTParser
                                             creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat ad.videoClickTrackingURLTemplates
                                             @trackingClicks.push 'url': url, 'obj': ad.videoClickTrackingURLTemplates
 
+                                if ad.extensions?
+                                    @extensionElements.push ad.extensions
+
                                 response.ads.splice index, 0, wrappedAd
 
                         delete ad.nextWrapperURL
@@ -258,10 +261,10 @@ class VASTParser
                             nodeHtml = node.xml
                         finally
                             nodeHtml = nodeHtml.replace('<Extensions>', '').replace('</Extensions>', '').trim()
-                            @extensionElements.push nodeHtml
+                            ad.extensions.push nodeHtml
 
                     else
-                        @extensionElements.push node.innerHTML
+                        ad.extensions.push node.innerHTML
 
                 when "AdSystem"
                     ad.system =
