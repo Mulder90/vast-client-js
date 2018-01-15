@@ -47,6 +47,9 @@ describe 'VASTParser', ->
         it 'should have merged top level error URLs', =>
             _response.errorURLTemplates.should.eql ["http://example.com/wrapper-error", "http://example.com/error"]
 
+        it 'should have an empty array for Extensions', =>
+            _response.extensionElements.should.eql []
+
         describe '#For the 1st ad (Wrapped)', ->
             ad1 = null
 
