@@ -178,7 +178,7 @@ class VASTParser
                                             creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat ad.videoClickTrackingURLTemplates
                                             @trackingClicks.push 'url': url, 'obj': ad.videoClickTrackingURLTemplates
 
-                                if ad.extensions?
+                                if ad.extensions.length > 0
                                     @extensionElements.push ad.extensions
 
                                 response.ads.splice index, 0, wrappedAd
