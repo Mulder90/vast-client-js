@@ -353,7 +353,6 @@ describe 'VASTParser', ->
         it 'should send a null response and a 303 error if no creative', (done) ->
             parser.parse urlfor('empty-no-creative.xml'), (response, error) =>
                 should.equal response, null
-                console.log response
                 error.code.should.eql 303
                 done()
 
