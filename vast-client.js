@@ -926,7 +926,7 @@ VASTParser = (function() {
                       }
                     }
                   }
-                  if (ad.extensions != null) {
+                  if (ad.extensions.length > 0) {
                     _this.extensionElements.push(ad.extensions);
                   }
                   response.ads.splice(index, 0, wrappedAd);
