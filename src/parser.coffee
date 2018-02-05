@@ -76,9 +76,7 @@ class VASTParser
             for node in xml.documentElement.childNodes
                 if node.nodeName is 'Error'
                     response.errorURLTemplates.push (@parseNodeText node)
-
-            for node in xml.documentElement.childNodes
-                if node.nodeName is 'Ad'
+                else if node.nodeName is 'Ad'
                     ad = @parseAdElement node
                     if ad?
                         response.ads.push ad
