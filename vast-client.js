@@ -763,7 +763,7 @@ VASTParser = (function() {
     parentURLs.push(url);
     return URLHandler.get(url, options, (function(_this) {
       return function(err, xml) {
-        var ad, complete, loopIndex, node, response, _j, _k, _len1, _len2, _ref1, _ref2;
+        var ad, complete, loopIndex, node, response, _j, _len1, _ref1;
         if (err != null) {
           return cb(err);
         }
@@ -777,12 +777,7 @@ VASTParser = (function() {
           node = _ref1[_j];
           if (node.nodeName === 'Error') {
             response.errorURLTemplates.push(_this.parseNodeText(node));
-          }
-        }
-        _ref2 = xml.documentElement.childNodes;
-        for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-          node = _ref2[_k];
-          if (node.nodeName === 'Ad') {
+          } else if (node.nodeName === 'Ad') {
             ad = _this.parseAdElement(node);
             if (ad != null) {
               response.ads.push(ad);
@@ -795,7 +790,7 @@ VASTParser = (function() {
           }
         }
         complete = function(error, errorAlreadyRaised) {
-          var noCreatives, _l, _len3, _ref3;
+          var noCreatives, _k, _len2, _ref2;
           if (error == null) {
             error = null;
           }
@@ -806,9 +801,9 @@ VASTParser = (function() {
             return;
           }
           noCreatives = true;
-          _ref3 = response.ads;
-          for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-            ad = _ref3[_l];
+          _ref2 = response.ads;
+          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+            ad = _ref2[_k];
             if (ad.nextWrapperURL != null) {
               return;
             }
@@ -848,8 +843,8 @@ VASTParser = (function() {
             continue;
           }
           (function(ad) {
-            var baseURL, protocol, _ref3;
-            if (parentURLs.length >= 10 || (_ref3 = ad.nextWrapperURL, __indexOf.call(parentURLs, _ref3) >= 0)) {
+            var baseURL, protocol, _ref2;
+            if (parentURLs.length >= 10 || (_ref2 = ad.nextWrapperURL, __indexOf.call(parentURLs, _ref2) >= 0)) {
               _this.error = new WrapperLimitReached();
               _this.track(ad.errorURLTemplates, {
                 ERRORCODE: _this.error.code
@@ -866,7 +861,7 @@ VASTParser = (function() {
               ad.nextWrapperURL = "" + baseURL + "/" + ad.nextWrapperURL;
             }
             return _this._parse(ad.nextWrapperURL, parentURLs, options, function(err, wrappedResponse) {
-              var creative, errorAlreadyRaised, eventName, index, wrappedAd, _base, _l, _len3, _len4, _len5, _len6, _m, _n, _o, _ref4, _ref5, _ref6, _ref7;
+              var creative, errorAlreadyRaised, eventName, index, wrappedAd, _base, _k, _l, _len2, _len3, _len4, _len5, _m, _n, _ref3, _ref4, _ref5, _ref6;
               errorAlreadyRaised = false;
               if (err != null) {
                 _this.error = err || new TimeoutVastUri();
@@ -886,9 +881,9 @@ VASTParser = (function() {
                 response.errorURLTemplates = response.errorURLTemplates.concat(wrappedResponse.errorURLTemplates);
                 index = response.ads.indexOf(ad);
                 response.ads.splice(index, 1);
-                _ref4 = wrappedResponse.ads;
-                for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
-                  wrappedAd = _ref4[_l];
+                _ref3 = wrappedResponse.ads;
+                for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
+                  wrappedAd = _ref3[_k];
                   wrappedAd.errorURLTemplates = ad.errorURLTemplates.concat(wrappedAd.errorURLTemplates);
                   wrappedAd.impressionURLTemplates = ad.impressionURLTemplates.concat(wrappedAd.impressionURLTemplates);
                   _this.impressions.push({
@@ -896,13 +891,13 @@ VASTParser = (function() {
                     'obj': ad.impressionURLTemplates
                   });
                   if (ad.trackingEvents != null) {
-                    _ref5 = wrappedAd.creatives;
-                    for (_m = 0, _len4 = _ref5.length; _m < _len4; _m++) {
-                      creative = _ref5[_m];
+                    _ref4 = wrappedAd.creatives;
+                    for (_l = 0, _len3 = _ref4.length; _l < _len3; _l++) {
+                      creative = _ref4[_l];
                       if (creative.type === 'linear') {
-                        _ref6 = Object.keys(ad.trackingEvents);
-                        for (_n = 0, _len5 = _ref6.length; _n < _len5; _n++) {
-                          eventName = _ref6[_n];
+                        _ref5 = Object.keys(ad.trackingEvents);
+                        for (_m = 0, _len4 = _ref5.length; _m < _len4; _m++) {
+                          eventName = _ref5[_m];
                           (_base = creative.trackingEvents)[eventName] || (_base[eventName] = []);
                           creative.trackingEvents[eventName] = creative.trackingEvents[eventName].concat(ad.trackingEvents[eventName]);
                         }
@@ -914,9 +909,9 @@ VASTParser = (function() {
                     }
                   }
                   if (ad.videoClickTrackingURLTemplates != null) {
-                    _ref7 = wrappedAd.creatives;
-                    for (_o = 0, _len6 = _ref7.length; _o < _len6; _o++) {
-                      creative = _ref7[_o];
+                    _ref6 = wrappedAd.creatives;
+                    for (_n = 0, _len5 = _ref6.length; _n < _len5; _n++) {
+                      creative = _ref6[_n];
                       if (creative.type === 'linear') {
                         creative.videoClickTrackingURLTemplates = creative.videoClickTrackingURLTemplates.concat(ad.videoClickTrackingURLTemplates);
                         _this.trackingClicks.push({
